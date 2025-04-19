@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useWorker } from './useWorker';
 
 /**
  * Options for the summarizer
@@ -9,213 +10,155 @@ export interface SummarizeOptions {
   do_sample?: boolean;
 }
 
-/**
- * Creates a web worker for summarization tasks
- * @returns Worker instance
- */
-function createSummarizerWorker(): Worker {
-  const workerCode = `
-    // Summarizer Worker
-    self.onmessage = async (event) => {
-      const { type, payload } = event.data;
-      
-      switch (type) {
-        case 'load':
-          // Simulate model loading in this simplified version
-          setTimeout(() => {
-            self.postMessage({ type: 'status', status: 'ready' });
-          }, 500);
-          break;
-          
-        case 'summarize':
-          try {
-            // Simulate summarization process
-            self.postMessage({ type: 'generating', isGenerating: true });
-            
-            // Add a delay to simulate processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Generate a simple summary by truncating
-            const summary = 'Summary: ' + payload.text.substring(0, 100) + 
-              (payload.text.length > 100 ? '...' : '');
-            
-            self.postMessage({
-              type: 'result',
-              summary,
-              isGenerating: false
-            });
-          } catch (error) {
-            self.postMessage({ 
-              type: 'error', 
-              error: error.message || 'Unknown error during summarization', 
-              isGenerating: false 
-            });
-          }
-          break;
-          
-        default:
-          self.postMessage({ 
-            type: 'error', 
-            error: 'Unknown command', 
-            isGenerating: false 
-          });
-      }
-    };
-  `;
-
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
+interface SummarizerHookResult {
+  summary: string;
+  isLoading: boolean;
+  isGenerating: boolean;
+  isReady: boolean;
+  error: string | null;
+  generateSummary: (text: string) => void;
+  status: 'loading' | 'ready' | 'error';
+  summarize: (text: string) => Promise<string>;
 }
 
-/**
- * Custom hook for text summarization using a web worker
- * @param modelName The name of the model to use (for future implementation)
- * @returns Object containing summarization state and functions
- */
-export const useSummarizer = (modelName: string = 'Xenova/distilbart-cnn-6-6') => {
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [isGenerating, setIsGenerating] = useState(false);
+export function useSummarizer(): SummarizerHookResult {
+  // State to track the summary process
+  const [summary, setSummary] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
-  // Use ref for worker to avoid recreating it on re-renders
-  const workerRef = useRef<Worker | null>(null);
+  // Handler for worker messages
+  const handleWorkerMessage = useCallback((event: MessageEvent) => {
+    const { type, status, summary, error, isGenerating } = event.data;
 
-  // Create and initialize the worker
-  useEffect(() => {
-    if (!workerRef.current) {
-      try {
-        workerRef.current = createSummarizerWorker();
+    console.log('Worker message:', event.data);
 
-        // Set up message handling
-        workerRef.current.onmessage = (event) => {
-          const {
-            type,
-            status: workerStatus,
-            error: workerError,
-            isGenerating: generatingStatus,
-          } = event.data;
-
-          switch (type) {
-            case 'status':
-              setStatus(workerStatus);
-              if (workerStatus === 'error') {
-                setError(workerError || 'Unknown model loading error');
-              } else if (workerStatus === 'ready') {
-                setError(null);
-              }
-              break;
-
-            case 'generating':
-              setIsGenerating(generatingStatus);
-              break;
-
-            case 'result':
-              setIsGenerating(false);
-              break;
-
-            case 'error':
-              setError(workerError || 'Unknown error during operation');
-              setIsGenerating(false);
-              break;
-          }
-        };
-
-        // Handle worker errors
-        workerRef.current.onerror = () => {
+    switch (type) {
+      case 'status':
+        if (status === 'ready') {
+          setIsLoading(false);
+          setIsReady(true);
+          setStatus('ready');
+        } else if (status === 'error') {
           setStatus('error');
-          setError('Worker encountered an error');
-          setIsGenerating(false);
-        };
+        }
+        break;
 
-        // Initialize the model
-        workerRef.current.postMessage({
-          type: 'load',
-          payload: { modelName },
-        });
-      } catch (err) {
-        setStatus('error');
-        setError('Failed to initialize worker');
-      }
-    }
+      case 'generating':
+        setIsGenerating(isGenerating);
+        break;
 
-    // Clean up on unmount
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-    };
-  }, [modelName]);
-
-  /**
-   * Generate a summary from the provided text
-   */
-  const summarize = async (text: string, options: SummarizeOptions = {}) => {
-    // Input validation
-    const trimmedText = text.trim();
-    if (!trimmedText) {
-      throw new Error('Please provide text to summarize');
-    }
-
-    // Check if model is ready
-    if (status !== 'ready' || !workerRef.current) {
-      throw new Error('Summarization model is not ready yet. Please wait.');
-    }
-
-    if (error) {
-      throw new Error(`Summarizer error: ${error}`);
-    }
-
-    // Set generating state
-    setIsGenerating(true);
-
-    // Create a promise that resolves when the worker sends back a result
-    return new Promise<string>((resolve, reject) => {
-      if (!workerRef.current) {
+      case 'result':
+        setSummary(summary);
         setIsGenerating(false);
-        reject(new Error('Worker not available'));
+        break;
+
+      case 'error':
+        setError(error || 'Unknown error occurred');
+        setIsGenerating(false);
+        break;
+
+      default:
+        console.warn('Unknown message type:', type);
+    }
+  }, []);
+
+  // Create worker with the message handler
+  const worker = useWorker('summarizer-worker', handleWorkerMessage);
+
+  // Initialize the worker
+  useEffect(() => {
+    if (!worker) return;
+
+    try {
+      // Initialize the worker
+      worker.postMessage({ type: 'load' });
+    } catch (err) {
+      setError('Failed to initialize summarizer');
+      setIsLoading(false);
+      setStatus('error');
+    }
+  }, [worker]);
+
+  // Function to generate summary - used internally
+  const generateSummary = useCallback(
+    (text: string) => {
+      if (!worker || !isReady) {
+        setError('Summarizer not ready');
         return;
       }
 
-      // Message handler specific to this summarization request
-      const messageHandler = (event: MessageEvent) => {
-        const { type, summary, error } = event.data;
+      setError(null);
+      setIsGenerating(true);
 
-        if (type === 'result') {
-          workerRef.current?.removeEventListener('message', messageHandler);
-          resolve(summary);
-        } else if (type === 'error') {
-          workerRef.current?.removeEventListener('message', messageHandler);
-          reject(new Error(error));
+      try {
+        worker.postMessage({
+          type: 'summarize',
+          payload: { text },
+        });
+      } catch (err) {
+        setError('Failed to generate summary');
+        setIsGenerating(false);
+      }
+    },
+    [worker, isReady],
+  );
+
+  // Function to generate summary that returns a promise - used by App.tsx
+  const summarize = useCallback(
+    async (text: string): Promise<string> => {
+      if (!worker || !isReady) {
+        throw new Error('Summarizer not ready');
+      }
+
+      setError(null);
+      setIsGenerating(true);
+
+      return new Promise<string>((resolve, reject) => {
+        try {
+          // Add a one-time message handler for this specific request
+          const messageHandler = (event: MessageEvent) => {
+            const { type, summary, error } = event.data;
+
+            if (type === 'result') {
+              worker.removeEventListener('message', messageHandler);
+              resolve(summary);
+              setIsGenerating(false);
+            } else if (type === 'error') {
+              worker.removeEventListener('message', messageHandler);
+              reject(new Error(error || 'Unknown error'));
+              setIsGenerating(false);
+            }
+          };
+
+          // Add the message handler
+          worker.addEventListener('message', messageHandler);
+
+          // Send the request
+          worker.postMessage({
+            type: 'summarize',
+            payload: { text },
+          });
+        } catch (err) {
+          setIsGenerating(false);
+          reject(err instanceof Error ? err : new Error('Failed to generate summary'));
         }
-      };
-
-      // Add temporary message handler for this request
-      workerRef.current.addEventListener('message', messageHandler);
-
-      // Send the task to the worker
-      workerRef.current.postMessage({
-        type: 'summarize',
-        payload: {
-          text: trimmedText,
-          options: {
-            max_length: 100,
-            min_length: 30,
-            do_sample: false,
-            ...options,
-          },
-        },
       });
-    }).finally(() => {
-      // Ensure isGenerating is reset even if there's an error
-      setIsGenerating(false);
-    });
-  };
+    },
+    [worker, isReady],
+  );
 
   return {
-    status,
+    summary,
+    isLoading,
     isGenerating,
+    isReady,
     error,
+    generateSummary,
+    status,
     summarize,
   };
-};
+}
