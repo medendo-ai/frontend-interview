@@ -9,6 +9,7 @@ import { useSummarizer } from './hooks/useSummarizer';
 env.backends.onnx.wasm.numThreads = 4;
 
 const App: React.FC = () => {
+  // State management
   const [summary, setSummary] = useState('');
   const [lastUpdated, setLastUpdated] = useState(Date.now());
   const [characterCount, setCharacterCount] = useState(0);
@@ -29,42 +30,42 @@ const App: React.FC = () => {
 
   // Update statistics whenever transcript changes
   useEffect(() => {
+    // Calculate statistics at once to avoid redundant re-renders
     setCharacterCount(transcript.length);
     setWordCount(transcript.split(/\s+/).filter(Boolean).length);
     setSentenceCount(transcript.split(/[.!?]+/).filter(Boolean).length);
     setLastUpdated(Date.now());
   }, [transcript, currentLanguage]);
 
-  // Add keyboard shortcut for toggle recording
+  // Add keyboard shortcut for toggle recording (Ctrl+Space)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && e.ctrlKey) {
         toggleRecording();
+        e.preventDefault(); // Prevent scrolling
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [toggleRecording]);
 
   // Update button class when generating state changes
   useEffect(() => {
-    if (summaryButtonRef.current) {
-      if (isGenerating) {
-        summaryButtonRef.current.classList.add('processing');
-      } else {
-        summaryButtonRef.current.classList.remove('processing');
-      }
+    if (!summaryButtonRef.current) return;
+
+    // Toggle the processing class based on isGenerating state
+    if (isGenerating) {
+      summaryButtonRef.current.classList.add('processing');
+    } else {
+      summaryButtonRef.current.classList.remove('processing');
     }
   }, [isGenerating]);
 
   // Generate a summary from the transcript
-  const generateSummary = useCallback(async () => {
+  const handleGenerateSummary = useCallback(async () => {
     try {
-      // Check if transcript exists
+      // Validate input
       if (!transcript.trim()) {
         window.alert('Please record some text before generating a summary.');
         return;
@@ -76,11 +77,11 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Error generating summary:', error);
 
-      if (error instanceof Error) {
-        window.alert(error.message);
-      } else {
-        window.alert('Failed to generate summary. Please try again.');
-      }
+      // Better error reporting
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to generate summary. Please try again.';
+
+      window.alert(errorMessage);
     }
   }, [transcript, summarize]);
 
@@ -90,19 +91,20 @@ const App: React.FC = () => {
       const selectedLanguageCode = event.target.value;
       const selectedLanguage = LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
 
-      if (selectedLanguage) {
-        setCurrentLanguage(selectedLanguage.code);
-        setLanguageLabel(selectedLanguage.label);
-        setLastUpdated(Date.now());
+      if (!selectedLanguage) return;
 
-        // Stop recording if active when changing language
-        if (isRecording) {
-          toggleRecording();
-        }
+      // Update language state
+      setCurrentLanguage(selectedLanguage.code);
+      setLanguageLabel(selectedLanguage.label);
+      setLastUpdated(Date.now());
 
-        // Clear the transcript when changing language
-        clearTranscript();
+      // Stop recording if active when changing language
+      if (isRecording) {
+        toggleRecording();
       }
+
+      // Clear the transcript when changing language
+      clearTranscript();
     },
     [isRecording, toggleRecording, clearTranscript],
   );
@@ -122,8 +124,10 @@ const App: React.FC = () => {
       <div className="spider top-left"></div>
       <div className="spider top-right"></div>
       <div className="caterpillar"></div>
+
       <header className="App-header">
         <h1>Buggy Speech-to-Text</h1>
+
         <div className="control-panel">
           <button
             onClick={toggleRecording}
@@ -149,6 +153,7 @@ const App: React.FC = () => {
             </select>
           </div>
         </div>
+
         <div className="stats-panel">
           <p>Characters: {characterCount}</p>
           <p>Words: {wordCount}</p>
@@ -157,6 +162,7 @@ const App: React.FC = () => {
           <p>Last updated: {new Date(lastUpdated).toLocaleTimeString()}</p>
         </div>
       </header>
+
       <main className="transcription-panel">
         <h2>Bug Transcription</h2>
         <div className="transcript-container">
@@ -172,7 +178,7 @@ const App: React.FC = () => {
 
           <button
             ref={summaryButtonRef}
-            onClick={generateSummary}
+            onClick={handleGenerateSummary}
             disabled={isGenerating || !transcript.trim() || modelStatus !== 'ready'}
             className={`summary-button ${isGenerating ? 'processing' : ''}`}
             aria-label="Generate Bug Report Summary"
@@ -188,8 +194,10 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
+
       <div className="ladybug"></div>
       <div className="beetle bottom-right"></div>
+
       <div className="status-footer">
         Status: {isRecording ? 'recording' : 'ready'} | isGenerating:{' '}
         {isGenerating ? 'true' : 'false'} | isRecording: {isRecording ? 'true' : 'false'}
