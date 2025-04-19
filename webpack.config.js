@@ -2,13 +2,11 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/index.tsx',
+  mode: 'development',
+  entry: './src/Index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-  },
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
   },
   module: {
     rules: [
@@ -22,10 +20,18 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|svg|jpg|jpeg|gif)$/i,
-        type: 'asset/resource',
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' },
+        type: 'javascript/auto',
       },
     ],
+  },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      path: false,
+      fs: false,
+    },
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -36,9 +42,8 @@ module.exports = {
     static: {
       directory: path.join(__dirname, 'public'),
     },
+    compress: true,
     port: 3001,
     hot: true,
-    open: true,
   },
-  mode: 'development',
 };

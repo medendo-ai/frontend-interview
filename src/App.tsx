@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { env } from '@xenova/transformers';
 import { LANGUAGES } from './constants/languages';
@@ -6,7 +6,7 @@ import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSummarizer } from './hooks/useSummarizer';
 
 // Set to use WASM backend for better compatibility
-env.backends.onnx.wasm.numThreads = 1;
+env.backends.onnx.wasm.numThreads = 4;
 
 const App: React.FC = () => {
   const [summary, setSummary] = useState('');
@@ -18,10 +18,28 @@ const App: React.FC = () => {
   const [languageLabel, setLanguageLabel] = useState('English');
 
   // Use the speech recognition hook
-  const { isRecording, transcript, interimText, toggleRecording, clearTranscript } = useSpeechRecognition(currentLanguage);
+  const { isRecording, transcript, interimText, toggleRecording, clearTranscript } =
+    useSpeechRecognition(currentLanguage);
 
   // Use the summarizer hook
-  const { status: modelStatus, isGenerating, summarize } = useSummarizer();
+  const { status: modelStatus, isGenerating, error: summarizerError, summarize } = useSummarizer();
+
+  // Monitor generating state changes
+  useEffect(() => {
+    console.log('[App] isGenerating state changed to:', isGenerating);
+
+    // Additional UI updates on state change
+    const button = document.getElementById('summary-button');
+    if (button) {
+      if (isGenerating) {
+        button.classList.add('processing');
+        button.setAttribute('data-state', 'generating');
+      } else {
+        button.classList.remove('processing');
+        button.setAttribute('data-state', 'ready');
+      }
+    }
+  }, [isGenerating]);
 
   useEffect(() => {
     // This logs stuff
@@ -51,7 +69,8 @@ const App: React.FC = () => {
     };
   }, [toggleRecording]);
 
-  const generateSummary = async () => {
+  // Memoize the generateSummary function
+  const generateSummary = useCallback(async () => {
     try {
       // Check if transcript exists
       if (!transcript.trim()) {
@@ -59,10 +78,23 @@ const App: React.FC = () => {
         return;
       }
 
+      console.log('[App] Starting summary generation, current isGenerating:', isGenerating);
+
+      // Visual indicator for UI to show processing has started
+      document.getElementById('summary-button')?.classList.add('processing');
+      document.getElementById('summary-button')?.setAttribute('data-state', 'generating');
+
       // Generate summary using the hook
       const result = await summarize(transcript);
-      setSummary(result);
+      console.log('[App] Summary generation complete, isGenerating should be false now');
 
+      // Ensure UI element shows processing is complete
+      setTimeout(() => {
+        document.getElementById('summary-button')?.classList.remove('processing');
+        document.getElementById('summary-button')?.setAttribute('data-state', 'ready');
+      }, 10);
+
+      setSummary(result);
     } catch (error) {
       console.error('Error in generateSummary:', error);
       if (error instanceof Error) {
@@ -70,8 +102,36 @@ const App: React.FC = () => {
       } else {
         window.alert('Failed to generate summary. Please try again.');
       }
+
+      // Make sure processing state is cleared even on error
+      document.getElementById('summary-button')?.classList.remove('processing');
+      document.getElementById('summary-button')?.setAttribute('data-state', 'ready');
     }
-  };
+  }, [transcript, summarize, isGenerating]);
+
+  // Direct DOM approach for button text to ensure it's always in sync
+  useEffect(() => {
+    const updateButtonText = () => {
+      const button = document.getElementById('summary-button');
+      if (!button) return;
+
+      if (modelStatus === 'loading') {
+        button.textContent = 'Loading Model...';
+      } else if (modelStatus === 'error') {
+        button.textContent = 'Model Failed to Load';
+      } else if (button.getAttribute('data-state') === 'generating' || isGenerating) {
+        button.textContent = 'Generating...';
+      } else {
+        button.textContent = 'Generate Bug Report';
+      }
+    };
+
+    updateButtonText();
+
+    // Run this function periodically to ensure the button text is always correct
+    const intervalId = setInterval(updateButtonText, 100);
+    return () => clearInterval(intervalId);
+  }, [modelStatus, isGenerating]);
 
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
@@ -81,21 +141,50 @@ const App: React.FC = () => {
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
       setLanguageLabel(selectedLanguage.label);
-      
+
       setLastUpdated(Date.now());
-      
+
       // Stop recording if active when changing language
       if (isRecording) {
         toggleRecording();
       }
-      
+
       // Clear the transcript when changing language
       clearTranscript();
     }
   };
 
+  // Determine button text outside of JSX
+  const buttonText =
+    modelStatus === 'loading'
+      ? 'Loading Model...'
+      : modelStatus === 'error'
+        ? 'Model Failed to Load'
+        : isGenerating
+          ? 'Generating...'
+          : 'Generate Bug Report';
+
   return (
     <div className="App bug-theme">
+      {/* Debug status (only visible during development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            background: 'rgba(0,0,0,0.8)',
+            color: 'lime',
+            padding: '5px',
+            fontSize: '12px',
+            zIndex: 9999,
+          }}
+        >
+          Status: {modelStatus} | isGenerating: {isGenerating ? 'true' : 'false'} | isRecording:{' '}
+          {isRecording ? 'true' : 'false'}
+        </div>
+      )}
+
       <div className="spider top-left"></div>
       <div className="spider top-right"></div>
       <div className="caterpillar"></div>
@@ -105,6 +194,7 @@ const App: React.FC = () => {
           <button
             onClick={toggleRecording}
             className={`record-button ${isRecording ? 'recording' : ''}`}
+            aria-label={isRecording ? 'Stop Recording' : 'Start Recording'}
           >
             {isRecording ? 'Stop Recording' : 'Start Recording'}
           </button>
@@ -143,18 +233,23 @@ const App: React.FC = () => {
         </div>
 
         <div className="summary-section">
+          {/* Visual indicator for generating state */}
+          {isGenerating && (
+            <div style={{ color: 'red', fontWeight: 'bold', marginBottom: '10px' }}>
+              Generating Summary...
+            </div>
+          )}
+
           <button
+            id="summary-button"
             onClick={generateSummary}
             disabled={isGenerating || !transcript.trim() || modelStatus !== 'ready'}
-            className="summary-button"
+            className={`summary-button ${isGenerating ? 'processing' : ''}`}
+            data-state={isGenerating ? 'generating' : 'ready'}
+            aria-label="Generate Bug Report Summary"
           >
-            {modelStatus === 'loading'
-              ? 'Loading Model...'
-              : modelStatus === 'error'
-                ? 'Model Failed to Load'
-                : isGenerating
-                  ? 'Generating...'
-                  : 'Generate Bug Report'}
+            {/* Button text will be directly manipulated by DOM for reliability */}
+            {buttonText}
           </button>
 
           {summary && (
