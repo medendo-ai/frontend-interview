@@ -5,6 +5,13 @@ import { LANGUAGES } from './constants/languages';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSummarizer } from './hooks/useSummarizer';
 
+// Components
+import ControlPanel from './components/ControlPanel';
+import StatsPanel from './components/StatsPanel';
+import TranscriptPanel from './components/TranscriptPanel';
+import SummarySection from './components/SummarySection';
+import StatusFooter from './components/StatusFooter';
+
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 4;
 
@@ -119,6 +126,8 @@ const App: React.FC = () => {
           ? 'Generating...'
           : 'Generate Bug Report';
 
+  const isButtonDisabled = isGenerating || !transcript.trim() || modelStatus !== 'ready';
+
   return (
     <div className="App bug-theme">
       <div className="spider top-left"></div>
@@ -128,80 +137,40 @@ const App: React.FC = () => {
       <header className="App-header">
         <h1>Buggy Speech-to-Text</h1>
 
-        <div className="control-panel">
-          <button
-            onClick={toggleRecording}
-            className={`record-button ${isRecording ? 'recording' : ''}`}
-            aria-label={isRecording ? 'Stop Recording' : 'Start Recording'}
-          >
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
-          </button>
+        <ControlPanel
+          isRecording={isRecording}
+          toggleRecording={toggleRecording}
+          currentLanguage={currentLanguage}
+          onLanguageChange={handleLanguageChange}
+        />
 
-          <div className="language-selector">
-            <label htmlFor="language-dropdown">Language: </label>
-            <select
-              id="language-dropdown"
-              value={currentLanguage}
-              onChange={handleLanguageChange}
-              className="language-dropdown"
-            >
-              {LANGUAGES.map((language) => (
-                <option key={language.code} value={language.code}>
-                  {language.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="stats-panel">
-          <p>Characters: {characterCount}</p>
-          <p>Words: {wordCount}</p>
-          <p>Sentences: {sentenceCount}</p>
-          <p>Recording time: {isRecording ? 'Active' : 'Inactive'}</p>
-          <p>Last updated: {new Date(lastUpdated).toLocaleTimeString()}</p>
-        </div>
+        <StatsPanel
+          characterCount={characterCount}
+          wordCount={wordCount}
+          sentenceCount={sentenceCount}
+          isRecording={isRecording}
+          lastUpdated={lastUpdated}
+        />
       </header>
 
       <main className="transcription-panel">
         <h2>Bug Transcription</h2>
-        <div className="transcript-container">
-          {transcript || (
-            <span className="placeholder">Your buggy transcription will appear here...</span>
-          )}
-          {interimText && <span className="interim-text"> {interimText}</span>}
-        </div>
+        <TranscriptPanel transcript={transcript} interimText={interimText} />
 
-        <div className="summary-section">
-          {/* Visual indicator for generating state */}
-          {isGenerating && <div className="generating-indicator">Generating summary...</div>}
-
-          <button
-            ref={summaryButtonRef}
-            onClick={handleGenerateSummary}
-            disabled={isGenerating || !transcript.trim() || modelStatus !== 'ready'}
-            className={`summary-button ${isGenerating ? 'processing' : ''}`}
-            aria-label="Generate Bug Report Summary"
-          >
-            {buttonText}
-          </button>
-
-          {summary && (
-            <div className="summary-container">
-              <h3>Bug Report Summary</h3>
-              <p>{summary}</p>
-            </div>
-          )}
-        </div>
+        <SummarySection
+          summary={summary}
+          isGenerating={isGenerating}
+          buttonText={buttonText}
+          buttonRef={summaryButtonRef}
+          onGenerateSummary={handleGenerateSummary}
+          isButtonDisabled={isButtonDisabled}
+        />
       </main>
 
       <div className="ladybug"></div>
       <div className="beetle bottom-right"></div>
 
-      <div className="status-footer">
-        Status: {isRecording ? 'recording' : 'ready'} | isGenerating:{' '}
-        {isGenerating ? 'true' : 'false'} | isRecording: {isRecording ? 'true' : 'false'}
-      </div>
+      {/* <StatusFooter isRecording={isRecording} isGenerating={isGenerating} /> */}
     </div>
   );
 };
