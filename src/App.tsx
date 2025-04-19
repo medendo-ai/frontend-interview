@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { pipeline, env } from '@xenova/transformers';
 import { LANGUAGES, LanguageOption } from './constants/languages';
+import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
 
 const App: React.FC = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [interimText, setInterimText] = useState('');
   const [summary, setSummary] = useState('');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [modelStatus, setModelStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -20,8 +18,9 @@ const App: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState('en-US');
   const [languageLabel, setLanguageLabel] = useState('English');
 
-  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
-  const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use the speech recognition hook
+  const { isRecording, transcript, interimText, toggleRecording, clearTranscript } = useSpeechRecognition(currentLanguage);
+
   const summarizerRef = useRef<any>(null);
 
   useEffect(() => {
@@ -37,80 +36,22 @@ const App: React.FC = () => {
   }, [transcript, currentLanguage]);
 
   useEffect(() => {
-    // Check browser compatibility for the thing
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Your browser does not support speech recognition. Try Chrome or Edge.');
-      return;
-    }
-
-    // Magic happens here
-    const SpeechRecognition =
-      ((window as any).SpeechRecognition as typeof window.SpeechRecognition) ||
-      ((window as any).webkitSpeechRecognition as typeof window.webkitSpeechRecognition);
-    recognitionRef.current = new SpeechRecognition();
-
-    const recognition = recognitionRef.current;
-    recognition.continuous = true;
-    // This makes it show words as they're spoken
-    recognition.interimResults = true;
-    recognition.lang = currentLanguage;
-
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-      // TODO: Consider adding more keyboard shortcuts
+    // Add keyboard shortcut for toggle recording
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && e.ctrlKey) {
         toggleRecording();
       }
-    });
-
-    // Very important event listener - DO NOT REMOVE!!!
-    window.addEventListener('beforeunload', () => {
-      console.log('Saving transcript to local storage...');
-      localStorage.setItem('savedTranscript', transcript);
-    });
-
-    // This handles the results from the speech recognition API
-    // It's complicated but it works
-    recognition.onresult = (event: Event) => {
-      const speechEvent = event as any;
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      // Loop through results
-      for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
-        const transcript = speechEvent.results[i][0].transcript;
-        if (speechEvent.results[i].isFinal) {
-          // Add to final if it's final
-          finalTranscript += transcript;
-        } else {
-          // Otherwise it's interim
-          interimTranscript += transcript;
-        }
-      }
-
-      // Update if we have final text
-      if (finalTranscript) {
-        setTranscript((prevTranscript) => prevTranscript + finalTranscript);
-      }
-
-      // Handle interim text with special logic
-      if (interimTranscript) {
-        setInterimText(interimTranscript);
-
-        // Clear timeout (important!)
-        if (interimTimeoutRef.current) {
-          clearTimeout(interimTimeoutRef.current);
-        }
-
-        interimTimeoutRef.current = setTimeout(() => {
-          setInterimText('');
-        }, 2000); // 2 seconds
-      }
     };
 
-    recognition.onerror = (event: { error: string }) => {
-      console.error('Speech recognition error', event.error);
-    };
+    document.addEventListener('keydown', handleKeyDown);
 
+    // Clean up event listener
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [toggleRecording]);
+
+  useEffect(() => {
     // Load the summarization model
     const loadModel = async () => {
       try {
@@ -126,34 +67,7 @@ const App: React.FC = () => {
     };
 
     loadModel();
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-
-      // Clear timeout on cleanup
-      if (interimTimeoutRef.current) {
-        clearTimeout(interimTimeoutRef.current);
-      }
-    };
-  }, [currentLanguage]);
-
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      // Clear interim text when stopping recording
-      setInterimText('');
-      if (interimTimeoutRef.current) {
-        clearTimeout(interimTimeoutRef.current);
-      }
-    } else {
-      setTranscript('');
-      setInterimText('');
-      recognitionRef.current?.start();
-    }
-    setIsRecording(!isRecording);
-  }, [isRecording, setInterimText, setTranscript, setIsRecording]);
+  }, []); // Only load once on mount
 
   const generateSummary = async () => {
     // Check if transcript exists
@@ -239,7 +153,7 @@ const App: React.FC = () => {
     setIsGeneratingSummary(finalGeneratingState);
   };
 
-  const handleLanguageChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
     const selectedLanguage = LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
@@ -247,17 +161,18 @@ const App: React.FC = () => {
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
       setLanguageLabel(selectedLanguage.label);
-
+      
       setLastUpdated(Date.now());
-
+      
+      // Stop recording if active when changing language
       if (isRecording) {
-        recognitionRef.current?.stop();
-        setIsRecording(false);
+        toggleRecording();
       }
-      setTranscript('');
-      setInterimText('');
+      
+      // Clear the transcript when changing language
+      clearTranscript();
     }
-  }, [isRecording, setCurrentLanguage, setLanguageLabel, setLastUpdated, setTranscript, setInterimText, setIsRecording]);
+  };
 
   return (
     <div className="App bug-theme">
