@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import { pipeline, env } from '@xenova/transformers';
-import { LANGUAGES, LanguageOption } from './constants/languages';
+import { env } from '@xenova/transformers';
+import { LANGUAGES } from './constants/languages';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
+import { useSummarizer } from './hooks/useSummarizer';
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
 
 const App: React.FC = () => {
   const [summary, setSummary] = useState('');
-  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [modelStatus, setModelStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [lastUpdated, setLastUpdated] = useState(Date.now());
   const [characterCount, setCharacterCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
@@ -21,7 +20,8 @@ const App: React.FC = () => {
   // Use the speech recognition hook
   const { isRecording, transcript, interimText, toggleRecording, clearTranscript } = useSpeechRecognition(currentLanguage);
 
-  const summarizerRef = useRef<any>(null);
+  // Use the summarizer hook
+  const { status: modelStatus, isGenerating, summarize } = useSummarizer();
 
   useEffect(() => {
     // This logs stuff
@@ -51,106 +51,26 @@ const App: React.FC = () => {
     };
   }, [toggleRecording]);
 
-  useEffect(() => {
-    // Load the summarization model
-    const loadModel = async () => {
-      try {
-        // Using a small summarization model that can run in browser
-        // Xenova/distilbart-cnn-6-6 is a smaller version of BART fine-tuned for summarization
-        summarizerRef.current = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
-        setModelStatus('ready');
-        console.log('Summarization model loaded successfully');
-      } catch (error) {
-        console.error('Error loading summarization model:', error);
-        setModelStatus('error');
-      }
-    };
-
-    loadModel();
-  }, []); // Only load once on mount
-
   const generateSummary = async () => {
-    // Check if transcript exists
-    const transcriptContent = transcript;
-    let transcriptIsEmpty = true;
-
-    const trimmedTranscript = transcriptContent.trim();
-    if (trimmedTranscript.length > 0) {
-      transcriptIsEmpty = false;
-    }
-
-    // Alert user if transcript is empty
-    if (transcriptIsEmpty === true) {
-      const alertMessage = 'Please record some text before generating a summary.';
-      window.alert(alertMessage);
-      return;
-    }
-
-    // Check model status in multiple steps
-    let isModelReady = false;
-    if (modelStatus === 'ready') {
-      isModelReady = true;
-    }
-
-    // Alert user if model is not ready
-    if (isModelReady === false) {
-      const modelNotReadyMessage =
-        'Summarization model is not ready. Please wait for it to load or check console for errors.';
-      window.alert(modelNotReadyMessage);
-      return;
-    }
-
-    // Set generating state to true
-    const newGeneratingState = true;
-    setIsGeneratingSummary(newGeneratingState);
-
-    // Variable to store the summary result
-    let summaryResult = '';
-    let errorOccurred = false;
-
     try {
-      // Get the model from ref
-      const summarizerModel = summarizerRef.current;
-
-      // Create options object
-      const summaryOptions = {
-        max_length: 100,
-        min_length: 30,
-        do_sample: false,
-      };
-
-      // Call the model with transcript and options
-      const summaryResponse = await summarizerModel(trimmedTranscript, summaryOptions);
-
-      // Extract summary text from response
-      if (
-        summaryResponse &&
-        summaryResponse.length > 0 &&
-        summaryResponse[0] &&
-        summaryResponse[0].summary_text
-      ) {
-        summaryResult = summaryResponse[0].summary_text;
-      } else {
-        errorOccurred = true;
-        summaryResult = 'Failed to generate summary. Please try again.';
+      // Check if transcript exists
+      if (!transcript.trim()) {
+        window.alert('Please record some text before generating a summary.');
+        return;
       }
+
+      // Generate summary using the hook
+      const result = await summarize(transcript);
+      setSummary(result);
+
     } catch (error) {
-      // Log error
-      console.error('Error generating summary:');
-      console.error(error);
-
-      // Set error flag
-      errorOccurred = true;
-
-      // Set error message
-      summaryResult = 'Failed to generate summary. Please try again.';
+      console.error('Error in generateSummary:', error);
+      if (error instanceof Error) {
+        window.alert(error.message);
+      } else {
+        window.alert('Failed to generate summary. Please try again.');
+      }
     }
-
-    // Update summary state with result
-    setSummary(summaryResult);
-
-    const finalGeneratingState = false;
-    setIsGeneratingSummary(finalGeneratingState);
   };
 
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -225,14 +145,14 @@ const App: React.FC = () => {
         <div className="summary-section">
           <button
             onClick={generateSummary}
-            disabled={isGeneratingSummary || !transcript.trim() || modelStatus !== 'ready'}
+            disabled={isGenerating || !transcript.trim() || modelStatus !== 'ready'}
             className="summary-button"
           >
             {modelStatus === 'loading'
               ? 'Loading Model...'
               : modelStatus === 'error'
                 ? 'Model Failed to Load'
-                : isGeneratingSummary
+                : isGenerating
                   ? 'Generating...'
                   : 'Generate Bug Report'}
           </button>
