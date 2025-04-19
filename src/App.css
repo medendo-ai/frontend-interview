@@ -44,12 +44,12 @@
 }
 
 .record-button.recording {
-  background-color: #4CAF50; /* Green */
+  background-color: #4caf50; /* Green */
   animation: pulse 1.5s infinite;
 }
 
 .record-button.recording::before {
-  content: "🐞"; /* Ladybug emoji */
+  content: '🐞'; /* Ladybug emoji */
   position: absolute;
   left: 10px;
 }
@@ -126,7 +126,7 @@
 }
 
 .caterpillar::before {
-  content: "🐛"; /* Caterpillar emoji */
+  content: '🐛'; /* Caterpillar emoji */
   font-size: 40px;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .ladybug::before {
-  content: "🐞"; /* Ladybug emoji */
+  content: '🐞'; /* Ladybug emoji */
   font-size: 40px;
 }
 
@@ -153,26 +153,36 @@
 }
 
 .beetle::before {
-  content: "🪲"; /* Beetle emoji */
+  content: '🪲'; /* Beetle emoji */
   font-size: 40px;
 }
 
 /* Animations */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes crawl {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(100vw + 100px)); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px));
+  }
 }
 
 /* Add some leaf decorations */
 .App::before,
 .App::after {
-  content: "";
+  content: '';
   position: absolute;
   background-color: rgba(90, 140, 90, 0.2);
   border-radius: 50% 50% 0 50%;

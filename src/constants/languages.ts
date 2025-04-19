@@ -10,4 +10,4 @@ export const LANGUAGES: LanguageOption[] = [
   { code: 'de-DE', label: 'German' },
   { code: 'it-IT', label: 'Italian' },
   { code: 'nl-NL', label: 'Dutch' },
-]; 
+];

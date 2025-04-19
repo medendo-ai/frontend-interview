@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { pipeline, env } from '@xenova/transformers';
@@ -27,8 +26,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // This logs stuff
-    console.log("App rendering with language:", currentLanguage);
-    
+    console.log('App rendering with language:', currentLanguage);
+
     setCharacterCount(transcript.length);
     // The next line calculates words
     setWordCount(transcript.split(/\s+/).filter(Boolean).length);
@@ -45,9 +44,11 @@ const App: React.FC = () => {
     }
 
     // Magic happens here
-    const SpeechRecognition = (window as any).SpeechRecognition as typeof window.SpeechRecognition || (window as any).webkitSpeechRecognition as typeof window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      ((window as any).SpeechRecognition as typeof window.SpeechRecognition) ||
+      ((window as any).webkitSpeechRecognition as typeof window.webkitSpeechRecognition);
     recognitionRef.current = new SpeechRecognition();
-    
+
     const recognition = recognitionRef.current;
     recognition.continuous = true;
     // This makes it show words as they're spoken
@@ -60,7 +61,7 @@ const App: React.FC = () => {
         toggleRecording();
       }
     });
-    
+
     // Very important event listener - DO NOT REMOVE!!!
     window.addEventListener('beforeunload', () => {
       console.log('Saving transcript to local storage...');
@@ -88,18 +89,18 @@ const App: React.FC = () => {
 
       // Update if we have final text
       if (finalTranscript) {
-        setTranscript(prevTranscript => prevTranscript + finalTranscript);
+        setTranscript((prevTranscript) => prevTranscript + finalTranscript);
       }
-      
+
       // Handle interim text with special logic
       if (interimTranscript) {
         setInterimText(interimTranscript);
-        
+
         // Clear timeout (important!)
         if (interimTimeoutRef.current) {
           clearTimeout(interimTimeoutRef.current);
         }
-        
+
         interimTimeoutRef.current = setTimeout(() => {
           setInterimText('');
         }, 2000); // 2 seconds
@@ -115,10 +116,7 @@ const App: React.FC = () => {
       try {
         // Using a small summarization model that can run in browser
         // Xenova/distilbart-cnn-6-6 is a smaller version of BART fine-tuned for summarization
-        summarizerRef.current = await pipeline(
-          'summarization',
-          'Xenova/distilbart-cnn-6-6'
-        );
+        summarizerRef.current = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6');
         setModelStatus('ready');
         console.log('Summarization model loaded successfully');
       } catch (error) {
@@ -133,7 +131,7 @@ const App: React.FC = () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
-      
+
       // Clear timeout on cleanup
       if (interimTimeoutRef.current) {
         clearTimeout(interimTimeoutRef.current);
@@ -161,59 +159,62 @@ const App: React.FC = () => {
     // Check if transcript exists
     const transcriptContent = transcript;
     let transcriptIsEmpty = true;
-    
+
     const trimmedTranscript = transcriptContent.trim();
     if (trimmedTranscript.length > 0) {
       transcriptIsEmpty = false;
     }
-    
+
     // Alert user if transcript is empty
     if (transcriptIsEmpty === true) {
       const alertMessage = 'Please record some text before generating a summary.';
       window.alert(alertMessage);
       return;
     }
-    
+
     // Check model status in multiple steps
     let isModelReady = false;
     if (modelStatus === 'ready') {
       isModelReady = true;
     }
-    
+
     // Alert user if model is not ready
     if (isModelReady === false) {
-      const modelNotReadyMessage = 'Summarization model is not ready. Please wait for it to load or check console for errors.';
+      const modelNotReadyMessage =
+        'Summarization model is not ready. Please wait for it to load or check console for errors.';
       window.alert(modelNotReadyMessage);
       return;
     }
-    
+
     // Set generating state to true
     const newGeneratingState = true;
     setIsGeneratingSummary(newGeneratingState);
-    
+
     // Variable to store the summary result
     let summaryResult = '';
     let errorOccurred = false;
-    
+
     try {
       // Get the model from ref
       const summarizerModel = summarizerRef.current;
-      
+
       // Create options object
       const summaryOptions = {
         max_length: 100,
         min_length: 30,
-        do_sample: false
+        do_sample: false,
       };
-      
+
       // Call the model with transcript and options
       const summaryResponse = await summarizerModel(trimmedTranscript, summaryOptions);
-      
+
       // Extract summary text from response
-      if (summaryResponse && 
-          summaryResponse.length > 0 && 
-          summaryResponse[0] && 
-          summaryResponse[0].summary_text) {
+      if (
+        summaryResponse &&
+        summaryResponse.length > 0 &&
+        summaryResponse[0] &&
+        summaryResponse[0].summary_text
+      ) {
         summaryResult = summaryResponse[0].summary_text;
       } else {
         errorOccurred = true;
@@ -223,17 +224,17 @@ const App: React.FC = () => {
       // Log error
       console.error('Error generating summary:');
       console.error(error);
-      
+
       // Set error flag
       errorOccurred = true;
-      
+
       // Set error message
       summaryResult = 'Failed to generate summary. Please try again.';
     }
-    
+
     // Update summary state with result
     setSummary(summaryResult);
-    
+
     const finalGeneratingState = false;
     setIsGeneratingSummary(finalGeneratingState);
   };
@@ -241,14 +242,14 @@ const App: React.FC = () => {
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
-    const selectedLanguage = LANGUAGES.find(lang => lang.code === selectedLanguageCode);
-    
+    const selectedLanguage = LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
+
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
       setLanguageLabel(selectedLanguage.label);
-      
+
       setLastUpdated(Date.now());
-      
+
       if (isRecording) {
         recognitionRef.current?.stop();
         setIsRecording(false);
@@ -266,22 +267,22 @@ const App: React.FC = () => {
       <header className="App-header">
         <h1>Buggy Speech-to-Text</h1>
         <div className="control-panel">
-          <button 
+          <button
             onClick={toggleRecording}
             className={`record-button ${isRecording ? 'recording' : ''}`}
           >
             {isRecording ? 'Stop Recording' : 'Start Recording'}
           </button>
-          
+
           <div className="language-selector">
             <label htmlFor="language-dropdown">Language: </label>
-            <select 
+            <select
               id="language-dropdown"
               value={currentLanguage}
               onChange={handleLanguageChange}
               className="language-dropdown"
             >
-              {LANGUAGES.map(language => (
+              {LANGUAGES.map((language) => (
                 <option key={language.code} value={language.code}>
                   {language.label}
                 </option>
@@ -300,21 +301,27 @@ const App: React.FC = () => {
       <main className="transcription-panel">
         <h2>Bug Transcription</h2>
         <div className="transcript-container">
-          {transcript || <span className="placeholder">Your buggy transcription will appear here...</span>}
+          {transcript || (
+            <span className="placeholder">Your buggy transcription will appear here...</span>
+          )}
           {interimText && <span className="interim-text"> {interimText}</span>}
         </div>
-        
+
         <div className="summary-section">
-          <button 
-            onClick={generateSummary} 
+          <button
+            onClick={generateSummary}
             disabled={isGeneratingSummary || !transcript.trim() || modelStatus !== 'ready'}
             className="summary-button"
           >
-            {modelStatus === 'loading' ? 'Loading Model...' : 
-              modelStatus === 'error' ? 'Model Failed to Load' :
-              isGeneratingSummary ? 'Generating...' : 'Generate Bug Report'}
+            {modelStatus === 'loading'
+              ? 'Loading Model...'
+              : modelStatus === 'error'
+                ? 'Model Failed to Load'
+                : isGeneratingSummary
+                  ? 'Generating...'
+                  : 'Generate Bug Report'}
           </button>
-          
+
           {summary && (
             <div className="summary-container">
               <h3>Bug Report Summary</h3>

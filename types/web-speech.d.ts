@@ -40,4 +40,4 @@ declare global {
     SpeechRecognition: new () => SpeechRecognition;
     webkitSpeechRecognition: new () => SpeechRecognition;
   }
-} 
+}
