@@ -44,12 +44,12 @@
 }
 
 .record-button.recording {
-  background-color: #4CAF50; /* Green */
+  background-color: #4caf50; /* Green */
   animation: pulse 1.5s infinite;
 }
 
 .record-button.recording::before {
-  content: "🐞"; /* Ladybug emoji */
+  content: '🐞'; /* Ladybug emoji */
   position: absolute;
   left: 10px;
 }
@@ -126,7 +126,7 @@
 }
 
 .caterpillar::before {
-  content: "🐛"; /* Caterpillar emoji */
+  content: '🐛'; /* Caterpillar emoji */
   font-size: 40px;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .ladybug::before {
-  content: "🐞"; /* Ladybug emoji */
+  content: '🐞'; /* Ladybug emoji */
   font-size: 40px;
 }
 
@@ -153,26 +153,36 @@
 }
 
 .beetle::before {
-  content: "🪲"; /* Beetle emoji */
+  content: '🪲'; /* Beetle emoji */
   font-size: 40px;
 }
 
 /* Animations */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes crawl {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(100vw + 100px)); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px));
+  }
 }
 
 /* Add some leaf decorations */
 .App::before,
 .App::after {
-  content: "";
+  content: '';
   position: absolute;
   background-color: rgba(90, 140, 90, 0.2);
   border-radius: 50% 50% 0 50%;
@@ -193,4 +203,77 @@
   top: -100px;
   right: -100px;
   transform: rotate(135deg);
+}
+
+/* Add styles for the new status footer */
+.status-footer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #aaffaa;
+  padding: 5px 10px;
+  font-size: 10px;
+  border-top-left-radius: 5px;
+  z-index: 100;
+}
+
+/* Add styles for the generating indicator */
+.generating-indicator {
+  color: #ff6b6b;
+  font-weight: bold;
+  margin-bottom: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+/* Clean up the summary button styles */
+.summary-button {
+  background-color: #af4c4c;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.summary-button:hover:not(:disabled) {
+  background-color: #8c3c3c;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.summary-button:disabled {
+  background-color: #cccccc;
+  color: #888888;
+  cursor: not-allowed;
+}
+
+.summary-button.processing {
+  background-color: #3c8c3c;
+  animation: pulse 1.5s infinite;
+}
+
+/* Simplified pulse animation */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Debug panel styles */
+.debug-panel {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
