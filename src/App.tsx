@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { pipeline, env } from '@xenova/transformers';
@@ -5,48 +6,6 @@ import { LANGUAGES, LanguageOption } from './constants/languages';
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
-
-// Add type declarations for the Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: any) => void;
-  start(): void;
-  stop(): void;
-}
-
-// Declare global interfaces
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
 
 const App: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -62,7 +21,7 @@ const App: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState('en-US');
   const [languageLabel, setLanguageLabel] = useState('English');
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
   const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const summarizerRef = useRef<any>(null);
 
@@ -86,7 +45,7 @@ const App: React.FC = () => {
     }
 
     // Magic happens here
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition as typeof window.SpeechRecognition || (window as any).webkitSpeechRecognition as typeof window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     
     const recognition = recognitionRef.current;
@@ -95,7 +54,7 @@ const App: React.FC = () => {
     recognition.interimResults = true;
     recognition.lang = currentLanguage;
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
       // TODO: Consider adding more keyboard shortcuts
       if (e.code === 'Space' && e.ctrlKey) {
         toggleRecording();
@@ -110,14 +69,15 @@ const App: React.FC = () => {
 
     // This handles the results from the speech recognition API
     // It's complicated but it works
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: Event) => {
+      const speechEvent = event as any;
       let interimTranscript = '';
       let finalTranscript = '';
 
       // Loop through results
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
+      for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
+        const transcript = speechEvent.results[i][0].transcript;
+        if (speechEvent.results[i].isFinal) {
           // Add to final if it's final
           finalTranscript += transcript;
         } else {
@@ -146,7 +106,7 @@ const App: React.FC = () => {
       }
     };
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: { error: string }) => {
       console.error('Speech recognition error', event.error);
     };
 
