@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { pipeline, env } from '@xenova/transformers';
+import { LANGUAGES, LanguageOption } from './constants/languages';
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
@@ -60,15 +61,7 @@ const App: React.FC = () => {
   const [sentenceCount, setSentenceCount] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState('en-US');
   const [languageLabel, setLanguageLabel] = useState('English');
-  const [availableLanguages, setAvailableLanguages] = useState([
-    { code: 'en-US', label: 'English' },
-    { code: 'es-ES', label: 'Spanish' },
-    { code: 'fr-FR', label: 'French' },
-    { code: 'de-DE', label: 'German' },
-    { code: 'it-IT', label: 'Italian' },
-    { code: 'nl-NL', label: 'Dutch' },
-  ]);
-  
+
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const summarizerRef = useRef<any>(null);
@@ -288,7 +281,7 @@ const App: React.FC = () => {
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
-    const selectedLanguage = availableLanguages.find(lang => lang.code === selectedLanguageCode);
+    const selectedLanguage = LANGUAGES.find(lang => lang.code === selectedLanguageCode);
     
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
@@ -328,7 +321,7 @@ const App: React.FC = () => {
               onChange={handleLanguageChange}
               className="language-dropdown"
             >
-              {availableLanguages.map(language => (
+              {LANGUAGES.map(language => (
                 <option key={language.code} value={language.code}>
                   {language.label}
                 </option>
