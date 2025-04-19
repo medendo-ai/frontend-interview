@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import { pipeline, env } from '@xenova/transformers';
 import { LANGUAGES, LanguageOption } from './constants/languages';
@@ -139,7 +139,7 @@ const App: React.FC = () => {
     };
   }, [currentLanguage]);
 
-  const toggleRecording = () => {
+  const toggleRecording = useCallback(() => {
     if (isRecording) {
       recognitionRef.current?.stop();
       // Clear interim text when stopping recording
@@ -153,7 +153,7 @@ const App: React.FC = () => {
       recognitionRef.current?.start();
     }
     setIsRecording(!isRecording);
-  };
+  }, [isRecording, setInterimText, setTranscript, setIsRecording]);
 
   const generateSummary = async () => {
     // Check if transcript exists
@@ -239,7 +239,7 @@ const App: React.FC = () => {
     setIsGeneratingSummary(finalGeneratingState);
   };
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLanguageChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
     const selectedLanguage = LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
@@ -257,7 +257,7 @@ const App: React.FC = () => {
       setTranscript('');
       setInterimText('');
     }
-  };
+  }, [isRecording, setCurrentLanguage, setLanguageLabel, setLastUpdated, setTranscript, setInterimText, setIsRecording]);
 
   return (
     <div className="App bug-theme">
