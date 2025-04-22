@@ -8,7 +8,7 @@ Welcome to the Medendo Tech frontend interview challenge! This exercise is desig
 
 In this challenge, you will be presented with a frontend codebase that requires review and cleanup.
 
-The codebase is a simple transcription app that uses the Web Speech API to transcribe audio. Note that the Web Speech API is a free service - it doesn't garuantee privacy.
+The codebase is a simple transcription app that uses the Web Speech API to transcribe audio. Note that the Web Speech API is a free service - it doesn't guarantee privacy.
 However, there are several issues that need to be addressed.
 
 ## Instructions
@@ -18,6 +18,7 @@ However, there are several issues that need to be addressed.
 2. **Document Issues**: Create a list of the problems you've identified, explaining why each is problematic.
 
 3. **Implement Solutions**: Make the necessary changes to address the issues you've found. Focus on:
+
    - Improving code readability and maintainability
    - Enhancing performance
    - Ensuring accessibility compliance
