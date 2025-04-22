@@ -1,196 +1,206 @@
 .App {
-  text-align: center;
-  min-height: 100vh;
-  background-color: #a3d9a5; /* Light green background like a leaf */
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+	text-align: center;
+	min-height: 100vh;
+	background-color: #a3d9a5; /* Light green background like a leaf */
+	padding: 20px;
+	position: relative;
+	overflow: hidden;
+	font-family: "Comic Sans MS", cursive, sans-serif;
 }
 
 .App-header {
-  background-color: #5a8c5a; /* Darker green */
-  padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  position: relative;
-  z-index: 1;
+	background-color: #5a8c5a; /* Darker green */
+	padding: 20px;
+	border-radius: 15px;
+	margin-bottom: 20px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	position: relative;
+	z-index: 1;
 }
 
 .App-header h1 {
-  color: #f8f8f8;
-  margin: 0 0 20px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+	color: #f8f8f8;
+	margin: 0 0 20px 0;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .record-button {
-  background-color: #ff6b6b; /* Red like a ladybug */
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  font-size: 16px;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: hidden;
+	background-color: #ff6b6b; /* Red like a ladybug */
+	color: white;
+	border: none;
+	padding: 12px 24px;
+	font-size: 16px;
+	border-radius: 30px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	position: relative;
+	overflow: hidden;
 }
 
 .record-button:hover {
-  background-color: #e05555;
-  transform: translateY(-2px);
+	background-color: #e05555;
+	transform: translateY(-2px);
 }
 
 .record-button.recording {
-  background-color: #4CAF50; /* Green */
-  animation: pulse 1.5s infinite;
+	background-color: #4caf50; /* Green */
+	animation: pulse 1.5s infinite;
 }
 
 .record-button.recording::before {
-  content: "🐞"; /* Ladybug emoji */
-  position: absolute;
-  left: 10px;
+	content: "🐞"; /* Ladybug emoji */
+	position: absolute;
+	left: 10px;
 }
 
 .transcription-panel {
-  background-color: #f8f8f8;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  position: relative;
-  z-index: 1;
-  border: 4px solid #8b5a2b; /* Brown border like tree bark */
+	background-color: #f8f8f8;
+	padding: 20px;
+	border-radius: 15px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	position: relative;
+	z-index: 1;
+	border: 4px solid #8b5a2b; /* Brown border like tree bark */
 }
 
 .transcription-panel h2 {
-  color: #5a8c5a;
-  margin-top: 0;
-  border-bottom: 2px dashed #8b5a2b;
-  padding-bottom: 10px;
+	color: #5a8c5a;
+	margin-top: 0;
+	border-bottom: 2px dashed #8b5a2b;
+	padding-bottom: 10px;
 }
 
 .transcript-container {
-  background-color: white;
-  padding: 15px;
-  border-radius: 10px;
-  min-height: 200px;
-  text-align: left;
-  line-height: 1.6;
-  position: relative;
-  border: 2px solid #ddd;
+	background-color: white;
+	padding: 15px;
+	border-radius: 10px;
+	min-height: 200px;
+	text-align: left;
+	line-height: 1.6;
+	position: relative;
+	border: 2px solid #ddd;
 }
 
 .placeholder {
-  color: #aaa;
-  font-style: italic;
+	color: #aaa;
+	font-style: italic;
 }
 
 .interim-text {
-  color: #888;
-  font-style: italic;
+	color: #888;
+	font-style: italic;
 }
 
 /* Bug decorations */
 .spider {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="black"/><line x1="50" y1="20" x2="20" y2="0" stroke="black" stroke-width="4"/><line x1="50" y1="20" x2="80" y2="0" stroke="black" stroke-width="4"/><line x1="20" y1="50" x2="0" y2="30" stroke="black" stroke-width="4"/><line x1="20" y1="50" x2="0" y2="70" stroke="black" stroke-width="4"/><line x1="80" y1="50" x2="100" y2="30" stroke="black" stroke-width="4"/><line x1="80" y1="50" x2="100" y2="70" stroke="black" stroke-width="4"/><line x1="50" y1="80" x2="20" y2="100" stroke="black" stroke-width="4"/><line x1="50" y1="80" x2="80" y2="100" stroke="black" stroke-width="4"/></svg>');
-  background-size: contain;
-  background-repeat: no-repeat;
-  z-index: 2;
+	position: absolute;
+	width: 50px;
+	height: 50px;
+	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="black"/><line x1="50" y1="20" x2="20" y2="0" stroke="black" stroke-width="4"/><line x1="50" y1="20" x2="80" y2="0" stroke="black" stroke-width="4"/><line x1="20" y1="50" x2="0" y2="30" stroke="black" stroke-width="4"/><line x1="20" y1="50" x2="0" y2="70" stroke="black" stroke-width="4"/><line x1="80" y1="50" x2="100" y2="30" stroke="black" stroke-width="4"/><line x1="80" y1="50" x2="100" y2="70" stroke="black" stroke-width="4"/><line x1="50" y1="80" x2="20" y2="100" stroke="black" stroke-width="4"/><line x1="50" y1="80" x2="80" y2="100" stroke="black" stroke-width="4"/></svg>');
+	background-size: contain;
+	background-repeat: no-repeat;
+	z-index: 2;
 }
 
 .top-left {
-  top: 20px;
-  left: 20px;
-  transform: rotate(45deg);
+	top: 20px;
+	left: 20px;
+	transform: rotate(45deg);
 }
 
 .top-right {
-  top: 20px;
-  right: 20px;
-  transform: rotate(-45deg);
+	top: 20px;
+	right: 20px;
+	transform: rotate(-45deg);
 }
 
 .caterpillar {
-  position: absolute;
-  top: 50%;
-  left: -50px;
-  width: 150px;
-  height: 40px;
-  z-index: 2;
-  animation: crawl 20s linear infinite;
+	position: relative;
+	top: 3.5em;
+	left: -50px;
+	width: 150px;
+	height: 40px;
+	z-index: 2;
+	animation: crawl 20s linear infinite;
 }
 
 .caterpillar::before {
-  content: "🐛"; /* Caterpillar emoji */
-  font-size: 40px;
+	content: "🐛"; /* Caterpillar emoji */
+	font-size: 40px;
 }
 
 .ladybug {
-  position: absolute;
-  bottom: 50px;
-  left: 50px;
-  z-index: 2;
+	position: absolute;
+	bottom: 50px;
+	left: 50px;
+	z-index: 2;
 }
 
 .ladybug::before {
-  content: "🐞"; /* Ladybug emoji */
-  font-size: 40px;
+	content: "🐞"; /* Ladybug emoji */
+	font-size: 40px;
 }
 
 .beetle {
-  position: absolute;
-  z-index: 2;
+	position: absolute;
+	z-index: 2;
 }
 
 .bottom-right {
-  bottom: 30px;
-  right: 50px;
+	bottom: 30px;
+	right: 50px;
 }
 
 .beetle::before {
-  content: "🪲"; /* Beetle emoji */
-  font-size: 40px;
+	content: "🪲"; /* Beetle emoji */
+	font-size: 40px;
 }
 
 /* Animations */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 @keyframes crawl {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(100vw + 100px)); }
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(calc(100vw + 100px));
+	}
 }
 
 /* Add some leaf decorations */
 .App::before,
 .App::after {
-  content: "";
-  position: absolute;
-  background-color: rgba(90, 140, 90, 0.2);
-  border-radius: 50% 50% 0 50%;
-  z-index: 0;
+	content: "";
+	position: absolute;
+	background-color: rgba(90, 140, 90, 0.2);
+	border-radius: 50% 50% 0 50%;
+	z-index: 0;
 }
 
 .App::before {
-  width: 300px;
-  height: 300px;
-  bottom: -150px;
-  left: -150px;
-  transform: rotate(45deg);
+	width: 300px;
+	height: 300px;
+	bottom: -150px;
+	left: -150px;
+	transform: rotate(45deg);
 }
 
 .App::after {
-  width: 200px;
-  height: 200px;
-  top: -100px;
-  right: -100px;
-  transform: rotate(135deg);
+	width: 200px;
+	height: 200px;
+	top: -100px;
+	right: -100px;
+	transform: rotate(135deg);
 }
