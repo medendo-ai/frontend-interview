@@ -6,10 +6,11 @@ Welcome to the Medendo Tech frontend interview challenge! This exercise is desig
 
 ## Challenge Overview
 
-In this challenge, you will be presented with a frontend codebase that requires review and cleanup.
+In this challenge, you will be presented with a vibe-coded frontend that requires review and cleanup.
 
 The codebase is a simple transcription app that uses the Web Speech API to transcribe audio. Note that the Web Speech API is a free service - it doesn't garuantee privacy.
-However, there are several issues that need to be addressed.
+
+There are several issues that need to be addressed.
 
 ## Instructions
 
@@ -18,7 +19,7 @@ However, there are several issues that need to be addressed.
 2. **Document Issues**: Create a list of the problems you've identified, explaining why each is problematic.
 
 3. **Implement Solutions**: Make the necessary changes to address the issues you've found. Focus on:
-   - Improving code readability and maintainability
+   - Improving code simplicity, readability and maintainability.
    - Enhancing performance
    - Ensuring accessibility compliance
    - Fixing bugs and handling edge cases
@@ -31,21 +32,20 @@ However, there are several issues that need to be addressed.
 
 ## Evaluation Criteria
 
-Your submission will be evaluated based on:
-
-- Thoroughness of your code review
-- Quality and correctness of your solutions
-- Code organization and readability
-- Attention to detail
-- Understanding of frontend best practices
-- Explanation of your thought process
+5 things we like to see:
+- Your present a clear code review / diagnosis of the flaws of the existing app.
+- You apply best practices and demonstrate good code structure and readability
+- You have a clean .git history that shows what was changed and why
+- You've done something to improve the app from an end-users POV.
+- You show pragmatism: you focus on activities with a large "ROI".
 
 ## Submission
 
-Please submit your improved code as a pull request to this repository.
+Please submit your improved code as a pull request - in this repository or your own. 
 
 ## Time Expectation
 
-You should aim to spend approximately 2-3 hours on this challenge. It's not expected that you find or fix every possible issue – we're more interested in seeing your approach to code review and your ability to analyse problems and prioritize improvements.
+You should aim to spend approximately 2-3 hours on this challenge. 
+
 
 Good luck!
