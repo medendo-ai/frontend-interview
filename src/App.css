@@ -5,7 +5,7 @@
   padding: 20px;
   position: relative;
   overflow: hidden;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: "Comic Sans MS", cursive, sans-serif;
 }
 
 .App-header {
@@ -44,7 +44,7 @@
 }
 
 .record-button.recording {
-  background-color: #4CAF50; /* Green */
+  background-color: #4caf50; /* Green */
   animation: pulse 1.5s infinite;
 }
 
@@ -159,14 +159,24 @@
 
 /* Animations */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes crawl {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(100vw + 100px)); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px));
+  }
 }
 
 /* Add some leaf decorations */

@@ -33,6 +33,7 @@ There are several issues that need to be addressed.
 ## Evaluation Criteria
 
 5 things we like to see:
+
 - Your present a clear code review / diagnosis of the flaws of the existing app.
 - You apply best practices and demonstrate good code structure and readability
 - You have a clean .git history that shows what was changed and why
@@ -41,11 +42,10 @@ There are several issues that need to be addressed.
 
 ## Submission
 
-Please submit your improved code as a pull request - in this repository or your own. 
+Please submit your improved code as a pull request - in this repository or your own.
 
 ## Time Expectation
 
-You should aim to spend approximately 2-3 hours on this challenge. 
-
+You should aim to spend approximately 2-3 hours on this challenge.
 
 Good luck!

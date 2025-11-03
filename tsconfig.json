@@ -18,4 +18,4 @@
     "outDir": "./dist"
   },
   "include": ["src/**/*"]
-} 
+}
