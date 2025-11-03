@@ -1,51 +1,10 @@
 import { env, pipeline, SummarizationPipeline, SummarizationSingle } from "@xenova/transformers";
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
+import { useSpeechRecognition } from "./speech-recognition";
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
-
-// Add type declarations for the Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: ErrorEvent) => void;
-  start(): void;
-  stop(): void;
-}
-
-// Declare global interfaces
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
 
 const AVAILABLE_LANGUAGES = [
   { code: "en-US", label: "English" },
@@ -57,9 +16,6 @@ const AVAILABLE_LANGUAGES = [
 ];
 
 const App: React.FC = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [interimText, setInterimText] = useState("");
   const [summary, setSummary] = useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [modelStatus, setModelStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -70,9 +26,17 @@ const App: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState("en-US");
   const [, setLanguageLabel] = useState("English");
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const summarizerRef = useRef<SummarizationPipeline>(null);
+
+  // Use the speech recognition hook
+  const {
+    isRecording,
+    transcript,
+    interimText,
+    toggleRecording,
+    clearTranscript,
+    isSupported,
+  } = useSpeechRecognition({ language: currentLanguage });
 
   useEffect(() => {
     // This logs stuff
@@ -87,21 +51,11 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    // Check browser compatibility for the thing
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+    // Check browser compatibility
+    if (!isSupported) {
       alert("Your browser does not support speech recognition. Try Chrome or Edge.");
       return;
     }
-
-    // Magic happens here
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-
-    const recognition = recognitionRef.current;
-    recognition.continuous = true;
-    // This makes it show words as they're spoken
-    recognition.interimResults = true;
-    recognition.lang = currentLanguage;
 
     document.addEventListener("keydown", (e) => {
       // TODO: Consider adding more keyboard shortcuts
@@ -115,48 +69,6 @@ const App: React.FC = () => {
       console.log("Saving transcript to local storage...");
       localStorage.setItem("savedTranscript", transcript);
     });
-
-    // This handles the results from the speech recognition API
-    // It's complicated but it works
-    recognition.onresult = (event) => {
-      let interimTranscript = "";
-      let finalTranscript = "";
-
-      // Loop through results
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          // Add to final if it's final
-          finalTranscript += transcript;
-        } else {
-          // Otherwise it's interim
-          interimTranscript += transcript;
-        }
-      }
-
-      // Update if we have final text
-      if (finalTranscript) {
-        setTranscript((prevTranscript) => prevTranscript + finalTranscript);
-      }
-
-      // Handle interim text with special logic
-      if (interimTranscript) {
-        setInterimText(interimTranscript);
-
-        // Clear timeout (important!)
-        if (interimTimeoutRef.current) {
-          clearTimeout(interimTimeoutRef.current);
-        }
-
-        interimTimeoutRef.current = setTimeout(() => {
-          setInterimText("");
-        }, 2000); // 2 seconds
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error", event.error);
-    };
 
     // Load the summarization model
     const loadModel = async () => {
@@ -173,34 +85,7 @@ const App: React.FC = () => {
     };
 
     loadModel();
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-
-      // Clear timeout on cleanup
-      if (interimTimeoutRef.current) {
-        clearTimeout(interimTimeoutRef.current);
-      }
-    };
-  }, [currentLanguage]);
-
-  const toggleRecording = () => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      // Clear interim text when stopping recording
-      setInterimText("");
-      if (interimTimeoutRef.current) {
-        clearTimeout(interimTimeoutRef.current);
-      }
-    } else {
-      setTranscript("");
-      setInterimText("");
-      recognitionRef.current?.start();
-    }
-    setIsRecording(!isRecording);
-  };
+  }, [currentLanguage, isSupported, toggleRecording, transcript]);
 
   const generateSummary = async () => {
     // Check if transcript exists
@@ -301,11 +186,9 @@ const App: React.FC = () => {
       setLastUpdated(Date.now());
 
       if (isRecording) {
-        recognitionRef.current?.stop();
-        setIsRecording(false);
+        toggleRecording();
       }
-      setTranscript("");
-      setInterimText("");
+      clearTranscript();
     }
   };
 
