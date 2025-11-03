@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import { env, pipeline } from "@xenova/transformers";
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { pipeline, env } from "@xenova/transformers";
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
@@ -34,7 +34,7 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean;
   lang: string;
   onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: any) => void;
+  onerror: (event: unknown) => void;
   start(): void;
   stop(): void;
 }
@@ -47,33 +47,32 @@ declare global {
   }
 }
 
+const AVAILABLE_LANGUAGES = [
+  { code: "en-US", label: "English" },
+  { code: "es-ES", label: "Spanish" },
+  { code: "fr-FR", label: "French" },
+  { code: "de-DE", label: "German" },
+  { code: "it-IT", label: "Italian" },
+  { code: "nl-NL", label: "Dutch" },
+];
+
 const App: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [interimText, setInterimText] = useState("");
   const [summary, setSummary] = useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [modelStatus, setModelStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  const [modelStatus, setModelStatus] = useState<"loading" | "ready" | "error">("loading");
   const [lastUpdated, setLastUpdated] = useState(Date.now());
   const [characterCount, setCharacterCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [sentenceCount, setSentenceCount] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState("en-US");
-  const [languageLabel, setLanguageLabel] = useState("English");
-  const [availableLanguages, setAvailableLanguages] = useState([
-    { code: "en-US", label: "English" },
-    { code: "es-ES", label: "Spanish" },
-    { code: "fr-FR", label: "French" },
-    { code: "de-DE", label: "German" },
-    { code: "it-IT", label: "Italian" },
-    { code: "nl-NL", label: "Dutch" },
-  ]);
+  const [, setLanguageLabel] = useState("English");
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const summarizerRef = useRef<any>(null);
+  const summarizerRef = useRef<unknown>(null);
 
   useEffect(() => {
     // This logs stuff
@@ -89,19 +88,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Check browser compatibility for the thing
-    if (
-      !("webkitSpeechRecognition" in window) &&
-      !("SpeechRecognition" in window)
-    ) {
-      alert(
-        "Your browser does not support speech recognition. Try Chrome or Edge.",
-      );
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      alert("Your browser does not support speech recognition. Try Chrome or Edge.");
       return;
     }
 
     // Magic happens here
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
 
     const recognition = recognitionRef.current;
@@ -170,10 +163,7 @@ const App: React.FC = () => {
       try {
         // Using a small summarization model that can run in browser
         // Xenova/distilbart-cnn-6-6 is a smaller version of BART fine-tuned for summarization
-        summarizerRef.current = await pipeline(
-          "summarization",
-          "Xenova/distilbart-cnn-6-6",
-        );
+        summarizerRef.current = await pipeline("summarization", "Xenova/distilbart-cnn-6-6");
         setModelStatus("ready");
         console.log("Summarization model loaded successfully");
       } catch (error) {
@@ -224,8 +214,7 @@ const App: React.FC = () => {
 
     // Alert user if transcript is empty
     if (transcriptIsEmpty === true) {
-      const alertMessage =
-        "Please record some text before generating a summary.";
+      const alertMessage = "Please record some text before generating a summary.";
       window.alert(alertMessage);
       return;
     }
@@ -250,7 +239,7 @@ const App: React.FC = () => {
 
     // Variable to store the summary result
     let summaryResult = "";
-    let errorOccurred = false;
+    // let errorOccurred = false;
 
     try {
       // Get the model from ref
@@ -264,10 +253,7 @@ const App: React.FC = () => {
       };
 
       // Call the model with transcript and options
-      const summaryResponse = await summarizerModel(
-        trimmedTranscript,
-        summaryOptions,
-      );
+      const summaryResponse = await summarizerModel(trimmedTranscript, summaryOptions);
 
       // Extract summary text from response
       if (
@@ -278,7 +264,7 @@ const App: React.FC = () => {
       ) {
         summaryResult = summaryResponse[0].summary_text;
       } else {
-        errorOccurred = true;
+        // errorOccurred = true;
         summaryResult = "Failed to generate summary. Please try again.";
       }
     } catch (error) {
@@ -287,7 +273,7 @@ const App: React.FC = () => {
       console.error(error);
 
       // Set error flag
-      errorOccurred = true;
+      // errorOccurred = true;
 
       // Set error message
       summaryResult = "Failed to generate summary. Please try again.";
@@ -300,14 +286,10 @@ const App: React.FC = () => {
     setIsGeneratingSummary(finalGeneratingState);
   };
 
-  const handleLanguageChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
+  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
-    const selectedLanguage = availableLanguages.find(
-      (lang) => lang.code === selectedLanguageCode,
-    );
+    const selectedLanguage = AVAILABLE_LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
 
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
@@ -347,7 +329,7 @@ const App: React.FC = () => {
               onChange={handleLanguageChange}
               className="language-dropdown"
             >
-              {availableLanguages.map((language) => (
+              {AVAILABLE_LANGUAGES.map((language) => (
                 <option key={language.code} value={language.code}>
                   {language.label}
                 </option>
@@ -367,9 +349,7 @@ const App: React.FC = () => {
         <h2>Bug Transcription</h2>
         <div className="transcript-container">
           {transcript || (
-            <span className="placeholder">
-              Your buggy transcription will appear here...
-            </span>
+            <span className="placeholder">Your buggy transcription will appear here...</span>
           )}
           {interimText && <span className="interim-text"> {interimText}</span>}
         </div>
@@ -377,11 +357,7 @@ const App: React.FC = () => {
         <div className="summary-section">
           <button
             onClick={generateSummary}
-            disabled={
-              isGeneratingSummary ||
-              !transcript.trim() ||
-              modelStatus !== "ready"
-            }
+            disabled={isGeneratingSummary || !transcript.trim() || modelStatus !== "ready"}
             className="summary-button"
           >
             {modelStatus === "loading"
