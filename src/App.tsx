@@ -1,4 +1,4 @@
-import { env, pipeline } from "@xenova/transformers";
+import { env, pipeline, SummarizationPipeline, SummarizationSingle } from "@xenova/transformers";
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 
@@ -34,7 +34,7 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean;
   lang: string;
   onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: unknown) => void;
+  onerror: (event: ErrorEvent) => void;
   start(): void;
   stop(): void;
 }
@@ -72,7 +72,7 @@ const App: React.FC = () => {
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const summarizerRef = useRef<unknown>(null);
+  const summarizerRef = useRef<SummarizationPipeline>(null);
 
   useEffect(() => {
     // This logs stuff
@@ -244,6 +244,9 @@ const App: React.FC = () => {
     try {
       // Get the model from ref
       const summarizerModel = summarizerRef.current;
+      if (!summarizerModel) {
+        throw new Error("Summarization model is not loaded.");
+      }
 
       // Create options object
       const summaryOptions = {
@@ -260,9 +263,9 @@ const App: React.FC = () => {
         summaryResponse &&
         summaryResponse.length > 0 &&
         summaryResponse[0] &&
-        summaryResponse[0].summary_text
+        (summaryResponse[0] as SummarizationSingle).summary_text
       ) {
-        summaryResult = summaryResponse[0].summary_text;
+        summaryResult = (summaryResponse[0] as SummarizationSingle).summary_text;
       } else {
         // errorOccurred = true;
         summaryResult = "Failed to generate summary. Please try again.";
