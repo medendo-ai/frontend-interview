@@ -29,14 +29,8 @@ const App: React.FC = () => {
   const summarizerRef = useRef<SummarizationPipeline>(null);
 
   // Use the speech recognition hook
-  const {
-    isRecording,
-    transcript,
-    interimText,
-    toggleRecording,
-    clearTranscript,
-    isSupported,
-  } = useSpeechRecognition({ language: currentLanguage });
+  const { isRecording, transcript, interimText, toggleRecording, clearTranscript, isSupported } =
+    useSpeechRecognition({ language: currentLanguage });
 
   useEffect(() => {
     // This logs stuff
