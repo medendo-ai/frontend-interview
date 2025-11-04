@@ -22,12 +22,8 @@ const App: React.FC = () => {
   const transcriptStats = calculateTranscriptStatistics(transcript);
 
   useEffect(() => {
-    // This logs stuff
-    console.log("App rendering with language:", currentLanguage);
-
-    // Update timestamp
     setLastUpdated(Date.now());
-  });
+  }, [transcript]);
 
   useEffect(() => {
     // Check browser compatibility
