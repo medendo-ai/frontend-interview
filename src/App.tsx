@@ -1,28 +1,18 @@
 import { env, pipeline, SummarizationPipeline, SummarizationSingle } from "@xenova/transformers";
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { useSpeechRecognition } from "./speech-recognition";
+import { findLanguageByCode, LanguageSelector } from "./Language";
+import { useSpeechRecognition } from "./SpeechRecognition";
+import { calculateTranscriptStatistics, TranscriptionStatistics } from "./TranscriptionStatistics";
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
-
-const AVAILABLE_LANGUAGES = [
-  { code: "en-US", label: "English" },
-  { code: "es-ES", label: "Spanish" },
-  { code: "fr-FR", label: "French" },
-  { code: "de-DE", label: "German" },
-  { code: "it-IT", label: "Italian" },
-  { code: "nl-NL", label: "Dutch" },
-];
 
 const App: React.FC = () => {
   const [summary, setSummary] = useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [modelStatus, setModelStatus] = useState<"loading" | "ready" | "error">("loading");
   const [lastUpdated, setLastUpdated] = useState(Date.now());
-  const [characterCount, setCharacterCount] = useState(0);
-  const [wordCount, setWordCount] = useState(0);
-  const [sentenceCount, setSentenceCount] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState("en-US");
   const [, setLanguageLabel] = useState("English");
 
@@ -32,14 +22,13 @@ const App: React.FC = () => {
   const { isRecording, transcript, interimText, toggleRecording, clearTranscript, isSupported } =
     useSpeechRecognition({ language: currentLanguage });
 
+  // Calculate statistics from transcript
+  const transcriptStats = calculateTranscriptStatistics(transcript);
+
   useEffect(() => {
     // This logs stuff
     console.log("App rendering with language:", currentLanguage);
 
-    setCharacterCount(transcript.length);
-    // The next line calculates words
-    setWordCount(transcript.split(/\s+/).filter(Boolean).length);
-    setSentenceCount(transcript.split(/[.!?]+/).filter(Boolean).length);
     // Update timestamp
     setLastUpdated(Date.now());
   });
@@ -171,7 +160,7 @@ const App: React.FC = () => {
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
-    const selectedLanguage = AVAILABLE_LANGUAGES.find((lang) => lang.code === selectedLanguageCode);
+    const selectedLanguage = findLanguageByCode(selectedLanguageCode);
 
     if (selectedLanguage) {
       setCurrentLanguage(selectedLanguage.code);
@@ -201,29 +190,18 @@ const App: React.FC = () => {
             {isRecording ? "Stop Recording" : "Start Recording"}
           </button>
 
-          <div className="language-selector">
-            <label htmlFor="language-dropdown">Language: </label>
-            <select
-              id="language-dropdown"
-              value={currentLanguage}
-              onChange={handleLanguageChange}
-              className="language-dropdown"
-            >
-              {AVAILABLE_LANGUAGES.map((language) => (
-                <option key={language.code} value={language.code}>
-                  {language.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <LanguageSelector
+            currentLanguage={currentLanguage}
+            onLanguageChange={handleLanguageChange}
+          />
         </div>
-        <div className="stats-panel">
-          <p>Characters: {characterCount}</p>
-          <p>Words: {wordCount}</p>
-          <p>Sentences: {sentenceCount}</p>
-          <p>Recording time: {isRecording ? "Active" : "Inactive"}</p>
-          <p>Last updated: {new Date(lastUpdated).toLocaleTimeString()}</p>
-        </div>
+        <TranscriptionStatistics
+          characterCount={transcriptStats.characterCount}
+          wordCount={transcriptStats.wordCount}
+          sentenceCount={transcriptStats.sentenceCount}
+          isRecording={isRecording}
+          lastUpdated={lastUpdated}
+        />
       </header>
       <main className="transcription-panel">
         <h2>Bug Transcription</h2>
