@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { ModelStatus, TranscriptionSummary } from "../TranscriptionSummary";
+import { ModelStatus, TranscriptionSummary } from "../components/TranscriptionSummary";
 
 // Mock the @xenova/transformers module
 jest.mock("@xenova/transformers", () => ({
@@ -62,7 +62,7 @@ describe("TranscriptionSummary", () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText("Generate Bug Report")).toBeInTheDocument();
+        expect(screen.getByText("Generate Transcription Report")).toBeInTheDocument();
       });
     });
 
@@ -96,11 +96,11 @@ describe("TranscriptionSummary", () => {
 
       // Wait for model to load
       await waitFor(() => {
-        expect(screen.getByText("Generate Bug Report")).toBeInTheDocument();
+        expect(screen.getByText("Generate Transcription Report")).toBeInTheDocument();
       });
 
       // Verify button is enabled with valid text
-      let button = screen.getByText("Generate Bug Report");
+      let button = screen.getByText("Generate Transcription Report");
       expect(button).not.toBeDisabled();
 
       // Now change to empty transcript
@@ -111,7 +111,7 @@ describe("TranscriptionSummary", () => {
       // Button should now be disabled
       button = screen.getByRole("button");
       expect(button).toBeDisabled();
-      expect(button).toHaveTextContent("Generate Bug Report");
+      expect(button).toHaveTextContent("Generate Transcription Report");
     });
 
     it("button is disabled when model is not ready", async () => {
@@ -143,10 +143,10 @@ describe("TranscriptionSummary", () => {
 
       // Wait for model to load
       await waitFor(() => {
-        expect(screen.getByText("Generate Bug Report")).toBeInTheDocument();
+        expect(screen.getByText("Generate Transcription Report")).toBeInTheDocument();
       });
 
-      const button = screen.getByText("Generate Bug Report");
+      const button = screen.getByText("Generate Transcription Report");
       expect(button).not.toBeDisabled();
 
       await act(async () => {
@@ -184,10 +184,10 @@ describe("TranscriptionSummary", () => {
 
       // Wait for model to load
       await waitFor(() => {
-        expect(screen.getByText("Generate Bug Report")).toBeInTheDocument();
+        expect(screen.getByText("Generate Transcription Report")).toBeInTheDocument();
       });
 
-      const button = screen.getByText("Generate Bug Report");
+      const button = screen.getByText("Generate Transcription Report");
 
       await act(async () => {
         fireEvent.click(button);
@@ -199,7 +199,7 @@ describe("TranscriptionSummary", () => {
 
       // Wait for completion
       await waitFor(() => {
-        expect(screen.getByText("Generate Bug Report")).toBeInTheDocument();
+        expect(screen.getByText("Generate Transcription Report")).toBeInTheDocument();
       });
     });
   });

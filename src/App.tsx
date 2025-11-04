@@ -1,10 +1,13 @@
 import { env } from "@xenova/transformers";
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { findLanguageByCode, LanguageSelector } from "./Language";
-import { useSpeechRecognition } from "./SpeechRecognition";
-import { calculateTranscriptStatistics, TranscriptionStatistics } from "./TranscriptionStatistics";
-import { TranscriptionSummary } from "./TranscriptionSummary";
+import { findLanguageByCode, LanguageSelector } from "./components/Language";
+import {
+  calculateTranscriptStatistics,
+  TranscriptionStatistics,
+} from "./components/TranscriptionStatistics";
+import { TranscriptionSummary } from "./components/TranscriptionSummary";
+import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 
 // Set to use WASM backend for better compatibility
 env.backends.onnx.wasm.numThreads = 1;
@@ -12,10 +15,9 @@ env.backends.onnx.wasm.numThreads = 1;
 const App: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState(Date.now());
   const [currentLanguage, setCurrentLanguage] = useState("en-US");
-  const [, setLanguageLabel] = useState("English");
 
   // Use the speech recognition hook
-  const { isRecording, transcript, interimText, toggleRecording, clearTranscript, isSupported } =
+  const { isRecording, transcript, interimText, toggleRecording, clearTranscript } =
     useSpeechRecognition({ language: currentLanguage });
 
   // Calculate statistics from transcript
@@ -26,12 +28,6 @@ const App: React.FC = () => {
   }, [transcript]);
 
   useEffect(() => {
-    // Check browser compatibility
-    if (!isSupported) {
-      alert("Your browser does not support speech recognition. Try Chrome or Edge.");
-      return;
-    }
-
     document.addEventListener("keydown", (e) => {
       // TODO: Consider adding more keyboard shortcuts
       if (e.code === "Space" && e.ctrlKey) {
@@ -39,28 +35,27 @@ const App: React.FC = () => {
       }
     });
 
-    // Very important event listener - DO NOT REMOVE!!!
     window.addEventListener("beforeunload", () => {
       console.log("Saving transcript to local storage...");
       localStorage.setItem("savedTranscript", transcript);
     });
-  }, [currentLanguage, isSupported, toggleRecording, transcript]);
+  }, [currentLanguage, toggleRecording, transcript]);
 
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
     const selectedLanguage = findLanguageByCode(selectedLanguageCode);
 
-    if (selectedLanguage) {
-      setCurrentLanguage(selectedLanguage.code);
-      setLanguageLabel(selectedLanguage.label);
+    if (!selectedLanguage) {
+      console.error("Selected language not found:", selectedLanguageCode);
+      return;
+    }
 
-      setLastUpdated(Date.now());
-
-      if (isRecording) {
-        toggleRecording();
-      }
-      clearTranscript();
+    setCurrentLanguage(selectedLanguage.code);
+    setLastUpdated(Date.now());
+    clearTranscript();
+    if (isRecording) {
+      toggleRecording();
     }
   };
 

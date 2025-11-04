@@ -1,5 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import { TranscriptionStatistics, calculateTranscriptStatistics } from "../TranscriptionStatistics";
+import {
+  TranscriptionStatistics,
+  calculateTranscriptStatistics,
+} from "../components/TranscriptionStatistics";
 
 describe("TranscriptionStatistics", () => {
   describe("TranscriptionStatistics Component", () => {

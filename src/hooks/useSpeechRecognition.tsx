@@ -52,7 +52,6 @@ interface UseSpeechRecognitionReturn {
   interimText: string;
   toggleRecording: () => void;
   clearTranscript: () => void;
-  isSupported: boolean;
 }
 
 export const useSpeechRecognition = ({
@@ -70,6 +69,12 @@ export const useSpeechRecognition = ({
     // Check browser compatibility for the thing
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
       setIsSupported(false);
+      return;
+    }
+
+    // Check browser compatibility
+    if (!isSupported) {
+      alert("Your browser does not support speech recognition. Try Chrome or Edge.");
       return;
     }
 
@@ -164,6 +169,5 @@ export const useSpeechRecognition = ({
     interimText,
     toggleRecording,
     clearTranscript,
-    isSupported,
   };
 };

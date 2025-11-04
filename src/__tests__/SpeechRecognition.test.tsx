@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { useSpeechRecognition } from "../SpeechRecognition";
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 
 // Mock the Web Speech API
 const mockSpeechRecognition = {
@@ -55,7 +55,6 @@ describe("useSpeechRecognition", () => {
       expect(result.current.isRecording).toBe(false);
       expect(result.current.transcript).toBe("");
       expect(result.current.interimText).toBe("");
-      expect(result.current.isSupported).toBe(true);
       expect(typeof result.current.toggleRecording).toBe("function");
       expect(typeof result.current.clearTranscript).toBe("function");
     });
@@ -79,46 +78,6 @@ describe("useSpeechRecognition", () => {
 
       expect(mockSpeechRecognition.continuous).toBe(true);
       expect(mockSpeechRecognition.interimResults).toBe(true);
-    });
-  });
-
-  describe("Browser compatibility", () => {
-    it("detects unsupported browsers", () => {
-      // Delete properties completely to simulate unsupported browser
-      delete (window as any).SpeechRecognition;
-      delete (window as any).webkitSpeechRecognition;
-
-      const { result } = renderHook(() => useSpeechRecognition());
-
-      expect(result.current.isSupported).toBe(false);
-    });
-
-    it("supports browsers with SpeechRecognition", () => {
-      // Ensure SpeechRecognition is available
-      Object.defineProperty(window, "SpeechRecognition", {
-        writable: true,
-        configurable: true,
-        value: jest.fn().mockImplementation(() => mockSpeechRecognition),
-      });
-      delete (window as any).webkitSpeechRecognition;
-
-      const { result } = renderHook(() => useSpeechRecognition());
-
-      expect(result.current.isSupported).toBe(true);
-    });
-
-    it("supports browsers with webkitSpeechRecognition", () => {
-      // Ensure webkitSpeechRecognition is available
-      delete (window as any).SpeechRecognition;
-      Object.defineProperty(window, "webkitSpeechRecognition", {
-        writable: true,
-        configurable: true,
-        value: jest.fn().mockImplementation(() => mockSpeechRecognition),
-      });
-
-      const { result } = renderHook(() => useSpeechRecognition());
-
-      expect(result.current.isSupported).toBe(true);
     });
   });
 

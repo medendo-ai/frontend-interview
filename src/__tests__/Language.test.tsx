@@ -4,7 +4,7 @@ import {
   findLanguageByCode,
   getDefaultLanguage,
   LanguageSelector,
-} from "../Language";
+} from "../components/Language";
 
 describe("Language", () => {
   describe("LanguageSelector", () => {

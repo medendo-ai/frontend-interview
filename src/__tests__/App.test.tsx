@@ -15,25 +15,29 @@ jest.mock("@xenova/transformers", () => ({
 }));
 
 // Mock the speech recognition hook
-jest.mock("../SpeechRecognition", () => ({
+jest.mock("../hooks/useSpeechRecognition", () => ({
   useSpeechRecognition: () => ({
     isRecording: false,
     transcript: "",
     interimText: "",
     toggleRecording: jest.fn(),
     clearTranscript: jest.fn(),
-    isSupported: true,
   }),
 }));
 
 // Mock the TranscriptionSummary component to avoid transformer loading
-jest.mock("../TranscriptionSummary", () => ({
+jest.mock("../components/TranscriptionSummary", () => ({
   TranscriptionSummary: ({ transcript }: { transcript: string }) => (
     <div data-testid="transcription-summary">Mock Summary Component - Transcript: {transcript}</div>
   ),
 }));
 
 describe("App", () => {
+  beforeEach(() => {
+    // Mock window.alert to avoid jsdom errors
+    global.alert = jest.fn();
+  });
+
   it("renders the main title", () => {
     render(<App />);
 
