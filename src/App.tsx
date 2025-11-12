@@ -83,7 +83,7 @@ const App: React.FC = () => {
     setSentenceCount(transcript.split(/[.!?]+/).filter(Boolean).length);
     // Update timestamp
     setLastUpdated(Date.now());
-  });
+  }, [transcript]);
 
   useEffect(() => {
     // Check browser compatibility for the thing
