@@ -25,3 +25,5 @@ Bug 1: "App.tsx:79 Maximum update depth exceeded. This can happen when a compone
 Sources for backend part:
 https://fastapi.tiangolo.com/tutorial/first-steps/
 https://learn.microsoft.com/en-us/azure/ai-foundry/openai/reference#chat-completions
+
+      

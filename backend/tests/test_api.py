@@ -1,9 +1,8 @@
 import os
 import unittest
-import pytest
 from unittest.mock import patch, AsyncMock
 import httpx
-from backend.main import app, summarize, SummarizeRequest, API_URL, API_KEY
+from main import app, summarize, SummarizeRequest, API_URL, API_KEY
 from fastapi.testclient import TestClient
 from fastapi import HTTPException
 
@@ -16,7 +15,7 @@ SAMPLE_TRANSCRIPT = "Lorem Ipsum is simply dummy text of the printing and typese
                     and more recently with desktop publishing software like Aldus PageMaker \
                     including versions of Lorem Ipsum"
 
-@patch('backend.main.httpx.AsyncClient.post')
+@patch('main.httpx.AsyncClient.post')
 class TestSummarization(unittest.TestCase):
 
     def test_successful_api_call(self, mock_openai_api_post):
