@@ -73,6 +73,10 @@ const App: React.FC = () => {
   const interimTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const summarizerRef = useRef<any>(null);
 
+    // Add this state variable with your other state declarations
+  const [isGeneratingBackendSummary, setIsGeneratingBackendSummary] = useState(false);
+  const [backendSummary, setBackendSummary] = useState('');
+
   useEffect(() => {
     // This logs stuff
     console.log("App rendering with language:", currentLanguage);
@@ -83,7 +87,7 @@ const App: React.FC = () => {
     setSentenceCount(transcript.split(/[.!?]+/).filter(Boolean).length);
     // Update timestamp
     setLastUpdated(Date.now());
-  });
+  }, [transcript]);
 
   useEffect(() => {
     // Check browser compatibility for the thing
@@ -285,6 +289,45 @@ const App: React.FC = () => {
     setIsGeneratingSummary(finalGeneratingState);
   };
 
+// BACKEND CALLS
+const generateBackendSummary = async () => {
+  // Check if transcript exists
+  const transcriptContent = transcript;
+  const trimmedTranscript = transcriptContent.trim();
+  
+  if (trimmedTranscript.length === 0) {
+    alert('Please record some text before generating a summary.');
+    return;
+  }
+  
+  setIsGeneratingBackendSummary(true);
+  setBackendSummary('');
+  
+  try {
+    const response = await fetch('http://127.0.0.1:8000/summarize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transcript: trimmedTranscript
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    setBackendSummary(data);
+  } catch (error) {
+    console.error('Error generating backend summary:', error);
+    setBackendSummary('Failed to generate summary from backend. Make sure the server is running.');
+  } finally {
+    setIsGeneratingBackendSummary(false);
+  }
+  };
+
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     // Get the selected language code from the dropdown
     const selectedLanguageCode = event.target.value;
@@ -352,22 +395,38 @@ const App: React.FC = () => {
         </div>
         
         <div className="summary-section">
-          <button 
-            onClick={generateSummary} 
-            disabled={isGeneratingSummary || !transcript.trim() || modelStatus !== 'ready'}
-            className="summary-button"
-          >
-            {modelStatus === 'loading' ? 'Loading Model...' : 
-              modelStatus === 'error' ? 'Model Failed to Load' :
-              isGeneratingSummary ? 'Generating...' : 'Generate Bug Report'}
-          </button>
-          
-          {summary && (
-            <div className="summary-container">
-              <h3>Bug Report Summary</h3>
-              <p>{summary}</p>
-            </div>
-          )}
+          <div className="summary-buttons">
+            <button 
+              onClick={generateSummary} 
+              disabled={isGeneratingSummary || !transcript.trim() || modelStatus !== 'ready'}
+              className="summary-button"
+            >
+              {modelStatus === 'loading' ? 'Loading Model...' : 
+                modelStatus === 'error' ? 'Model Failed to Load' :
+                isGeneratingSummary ? 'Generating...' : 'Generate Bug Report'}
+            </button>
+
+            <button 
+              onClick={generateBackendSummary} 
+              disabled={isGeneratingBackendSummary || !transcript.trim()}
+              className="summary-button backend-button"
+            >
+              {isGeneratingBackendSummary ? 'Generating via Backend...' : 'Generate Bug Report (Backend)'}
+            </button>
+            
+            {summary && (
+              <div className="summary-container">
+                <h3>Bug Report Summary (Frontend)</h3>
+                <p>{summary}</p>
+              </div>
+            )}
+            {backendSummary && (
+              <div className="summary-container backend-summary">
+                <h3>Bug Report Summary (Backend)</h3>
+                <p>{backendSummary}</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
       <div className="ladybug"></div>
