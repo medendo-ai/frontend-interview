@@ -5,18 +5,33 @@ import httpx
 import json
 import os
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001"],  # React dev server port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 load_dotenv()
 
 API_URL = os.getenv("API_URL")
 API_KEY = os.getenv("API_KEY")
 
-app = FastAPI()
 
 class SummarizeRequest(BaseModel):
     transcript: str
 
 @app.post("/summarize")
 async def summarize(req: SummarizeRequest):
+
+    if not req.transcript:
+        raise HTTPException(status_code=400, detail="Bad request, text cannot be empty")
+
     headers = {
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
